@@ -5,14 +5,14 @@ import plotly.express as px
 # הגדרות דף RTL ומראה מקצועי
 st.set_page_config(page_title="Consumelator V2 - Pro System", layout="wide")
 
-# הזרקת CSS לתמיכה ביישור לימין (RTL)
+# הזרקת CSS לתמיכה ביישור לימין (RTL) - תיקון unsafe_allow_html
 st.markdown("""
     <style>
     .main { text-align: right; direction: rtl; }
     div[data-testid="stSidebar"] { direction: rtl; }
     .stMetric { text-align: right; }
     </style>
-    """, unsafe_allow_stdio=True)
+    """, unsafe_allow_html=True)
 
 st.title("📊 Consumelator V2 - מערכת ניהול, צמיחה ו-ROI")
 st.markdown("---")
@@ -67,7 +67,7 @@ with st.sidebar:
 st.subheader("📈 נתוני אמת מקדימים להשוואה (12 חודשים)")
 st.write("הזן את נתוני המקור של העסק מהשנה האחרונה:")
 
-# יצירת טבלת נתוני עבר עם המספרים שסיפקת
+# יצירת טבלת נתוני עבר
 hist_data = {
     "חודש": [f"חודש {i}" for i in range(1, 13)],
     "מחזור כולל מע\"מ": [184000, 129700, 201000, 188000, 144000, 125000, 164000, 171000, 121000, 138000, 133000, 191000],
@@ -84,7 +84,7 @@ pre_club_annual_profit = (df_hist["מחזור כולל מע\"מ"].sum() / (1+vat
 def run_simulation():
     res = []
     members = 0
-    points_pool = 0 # יתרת נקודות מצטברת (Liability)
+    points_pool = 0 
     
     for m in range(1, 37):
         # 1. גיוס חברים ושיתופים
@@ -99,11 +99,9 @@ def run_simulation():
         rev_no_vat = total_rev / (1 + vat_pct)
         
         # 3. לוגיקת נקודות וקאשבק
-        # צבירה (מתנות + אחוז מהקנייה)
         earned = (rev_club / (1 + vat_pct) * cashback_pct) + (new_members * gift_pts) + (referral_members * share_gift)
         points_pool += earned
         
-        # מימוש (עד המגבלה או עד גמר היתרה)
         max_redemption = (rev_club / (1 + vat_pct)) * redemption_limit
         redeemed = min(points_pool, max_redemption)
         points_pool -= redeemed
@@ -135,16 +133,12 @@ c2.metric("הוצאות קבועות (חודשי)", f"₪{total_fixed:,.0f}")
 c3.metric("רווח נקי (חודש 36)", f"₪{df_sim['רווח נקי'].iloc[-1]:,}")
 c4.metric("חברי מועדון (חודש 36)", f"{df_sim['חברי מועדון'].iloc[-1]:,}")
 
-# גרף השוואתי
 fig = px.line(df_sim, x="חודש", y=["רווח נקי", "מחזור (כולל מע\"מ)"], 
               labels={"value": "שקלים", "variable": "מדד"},
               title="צמיחה חזויה: מחזור מול רווח נקי")
 st.plotly_chart(fig, use_container_width=True)
 
-# טבלת נתונים מלאה
 with st.expander("לצפייה בטבלת הנתונים המלאה של הסימולציה"):
     st.dataframe(df_sim, use_container_width=True)
 
-# סיכום השוואתי
-st.success(f"לפי נתוני העבר, הרווח השנתי ללא מועדון עומד על ₪{pre_club_annual_profit:,.0f}. "
-           f"עם המועדון, בתוך 3 שנים המחזור החודשי צפוי לצמוח ל-₪{df_sim['מחזור (כולל מע\'מ)'].iloc[-1]:,}.")
+st.success(f"לפי נתוני העבר, הרווח השנתי ללא מועדון עומד על ₪{pre_club_annual_profit:,.0f}.")
